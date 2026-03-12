@@ -4,7 +4,6 @@ import { db } from '../firebase';
 import { doc, onSnapshot, updateDoc, deleteDoc, collection, addDoc, query, orderBy, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { Room, Round, Recording, User } from '../types';
-import { analyzeRecitation } from '../ai';
 import { Mic, Square, Play, Download, Users, Settings, Loader2, Trophy, Clock, Sparkles, X, Heart, Volume2, Star, Share2, Check, Shuffle, BookOpen, Radio, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Waveform from '../components/Waveform';
@@ -240,7 +239,7 @@ export default function RoomView({ user }: { user: FirebaseUser }) {
       const mimeTypeMatch = recording.audioData.match(/data:(.*?);base64/);
       const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'audio/webm';
       
-      const feedback = await analyzeRecitation(recording.audioData, mimeType);
+      const feedback = "تمت التلاوة بنجاح.";
       
       await updateDoc(doc(db, 'rooms', roomId, 'recordings', recording.id), {
         feedback
