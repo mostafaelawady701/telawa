@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid", "createdAt"]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "A competition room",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "hostId": { "type": "string" },
+        "status": { "type": "string", "enum": ["waiting", "playing"] },
+        "currentRoundId": { "type": "string" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "maxParticipants": { "type": "number" },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "color": { "type": "string" },
+            "backgroundImage": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["name", "hostId", "status", "participants", "createdAt"]
+    },
+    "Round": {
+      "title": "Round",
+      "description": "A round within a room",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string" },
+        "verseText": { "type": "string" },
+        "surahName": { "type": "string" },
+        "ayahNumber": { "type": "number" },
+        "status": { "type": "string", "enum": ["countdown", "recording", "reviewing"] },
+        "activeRecorderId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["roomId", "verseText", "surahName", "ayahNumber", "status", "createdAt"]
+    },
+    "Recording": {
+      "title": "Recording",
+      "description": "An audio recording for a round",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string" },
+        "roundId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "audioData": { "type": "string" },
+        "duration": { "type": "number" },
+        "feedback": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["roomId", "roundId", "userId", "userName", "audioData", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/rooms/{roomId}": {
+      "schema": { "$ref": "#/entities/Room" },
+      "description": "Competition rooms"
+    },
+    "/rooms/{roomId}/rounds/{roundId}": {
+      "schema": { "$ref": "#/entities/Round" },
+      "description": "Rounds within a room"
+    },
+    "/rooms/{roomId}/recordings/{recordingId}": {
+      "schema": { "$ref": "#/entities/Recording" },
+      "description": "Recordings within a room"
+    }
+  }
+}

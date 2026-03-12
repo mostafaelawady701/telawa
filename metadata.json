@@ -1,0 +1,5 @@
+{
+  "name": "Tilaawa - Quran Recitation Competitions",
+  "description": "A platform for live Quran recitation competitions with real-time rooms, audio recording, and AI-powered Tajweed feedback.",
+  "requestFramePermissions": ["camera", "microphone"]
+}

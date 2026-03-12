@@ -1,0 +1,178 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - isAnonymous: boolean (optional)
+    //   - createdAt: number (required, immutable)
+    //
+    // Collection: rooms
+    // Document ID: {roomId}
+    // Fields:
+    //   - name: string (required)
+    //   - hostId: string (required, immutable)
+    //   - status: string (required, enum: ['waiting', 'playing'])
+    //   - currentRoundId: string (optional)
+    //   - participants: list of strings (required)
+    //   - maxParticipants: number (optional)
+    //   - theme: map (optional, color: string, backgroundImage: string)
+    //   - createdAt: number (required, immutable)
+    //
+    // Collection: rooms/{roomId}/rounds
+    // Document ID: {roundId}
+    // Fields:
+    //   - roomId: string (required, immutable)
+    //   - verseText: string (required, immutable)
+    //   - surahName: string (required, immutable)
+    //   - ayahNumber: number (required, immutable)
+    //   - status: string (required, enum: ['countdown', 'recording', 'reviewing'])
+    //   - activeRecorderId: string (optional)
+    //   - createdAt: number (required, immutable)
+    //
+    // Collection: rooms/{roomId}/recordings
+    // Document ID: {recordingId}
+    // Fields:
+    //   - roomId: string (required, immutable)
+    //   - roundId: string (required, immutable)
+    //   - userId: string (required, immutable)
+    //   - userName: string (required, immutable)
+    //   - audioData: string (required, immutable)
+    //   - duration: number (optional, immutable)
+    //   - feedback: string (optional)
+    //   - likes: list (optional)
+    //   - score: number (optional)
+    //   - createdAt: number (required, immutable)
+    //
+    // ===============================================================
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((request.auth.token.email == "waleedelawady3@gmail.com" || request.auth.token.email == "waleedelawady32gamil.comm" || request.auth.token.email == "waleedelawady3@gamil.com") && request.auth.token.email_verified == true);
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+    
+    // Domain Validators
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() > 0 && data.uid.size() < 100 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('isAnonymous' in data) || data.isAnonymous is bool) &&
+             data.createdAt is number;
+    }
+    
+    function isValidRoom(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.hostId is string && data.hostId.size() > 0 && data.hostId.size() <= 100 &&
+             data.status in ['waiting', 'playing'] &&
+             (!('currentRoundId' in data) || (data.currentRoundId is string && data.currentRoundId.size() <= 100)) &&
+             data.participants is list && data.participants.size() <= 50 &&
+             (!('maxParticipants' in data) || (data.maxParticipants is number && data.maxParticipants > 0 && data.maxParticipants <= 50)) &&
+             (!('recordingDuration' in data) || (data.recordingDuration is number && data.recordingDuration >= 10 && data.recordingDuration <= 300)) &&
+             (!('theme' in data) || (data.theme is map &&
+                (!('color' in data.theme) || (data.theme.color is string && data.theme.color.size() <= 50)) &&
+                (!('backgroundImage' in data.theme) || (data.theme.backgroundImage is string && data.theme.backgroundImage.size() <= 1000))
+             )) &&
+             data.createdAt is number;
+    }
+    
+    function isValidRound(data) {
+      return data.roomId is string && data.roomId.size() > 0 && data.roomId.size() <= 100 &&
+             data.verseText is string && data.verseText.size() > 0 && data.verseText.size() <= 2000 &&
+             data.surahName is string && data.surahName.size() > 0 && data.surahName.size() <= 100 &&
+             data.ayahNumber is number && data.ayahNumber > 0 &&
+             data.status in ['countdown', 'recording', 'reviewing'] &&
+             (!('activeRecorderId' in data) || data.activeRecorderId == null || (data.activeRecorderId is string && data.activeRecorderId.size() <= 100)) &&
+             data.createdAt is number;
+    }
+    
+    function isValidRecording(data) {
+      return data.roomId is string && data.roomId.size() > 0 && data.roomId.size() <= 100 &&
+             data.roundId is string && data.roundId.size() > 0 && data.roundId.size() <= 100 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 100 &&
+             data.userName is string && data.userName.size() > 0 && data.userName.size() <= 100 &&
+             data.audioData is string && data.audioData.size() > 0 && data.audioData.size() <= 5000000 &&
+             (!('duration' in data) || (data.duration is number && data.duration >= 0)) &&
+             (!('feedback' in data) || (data.feedback is string && data.feedback.size() <= 10000)) &&
+             (!('likes' in data) || (data.likes is list && data.likes.size() <= 1000)) &&
+             (!('score' in data) || (data.score is number && data.score >= 0 && data.score <= 100)) &&
+             data.createdAt is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && hasRequiredFields(['uid', 'createdAt']) && isValidUser(request.resource.data) && uidUnchanged();
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt']);
+    }
+    
+    match /rooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && hasRequiredFields(['name', 'hostId', 'status', 'participants', 'createdAt']) && isValidRoom(request.resource.data) && request.resource.data.hostId == request.auth.uid;
+      allow update: if isAuthenticated() && isValidRoom(request.resource.data) && areImmutableFieldsUnchanged(['hostId', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+    
+    function validActiveRecorderIdChange() {
+      let oldId = resource.data.get('activeRecorderId', null);
+      let newId = request.resource.data.get('activeRecorderId', null);
+      return oldId == newId || 
+             (oldId == null && newId == request.auth.uid) || 
+             (oldId == request.auth.uid && newId == null) ||
+             (request.auth.uid == get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId);
+    }
+
+    match /rooms/{roomId}/rounds/{roundId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && hasRequiredFields(['roomId', 'verseText', 'surahName', 'ayahNumber', 'status', 'createdAt']) && isValidRound(request.resource.data) && request.resource.data.roomId == roomId;
+      allow update: if isAuthenticated() && isValidRound(request.resource.data) && areImmutableFieldsUnchanged(['roomId', 'verseText', 'surahName', 'ayahNumber', 'createdAt']) && validActiveRecorderIdChange();
+    }
+    
+    function isRoomHost(roomId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId == request.auth.uid;
+    }
+
+    match /rooms/{roomId}/recordings/{recordingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && hasRequiredFields(['roomId', 'roundId', 'userId', 'userName', 'audioData', 'createdAt']) && isValidRecording(request.resource.data) && request.resource.data.userId == request.auth.uid && request.resource.data.roomId == roomId;
+      allow update: if isAuthenticated() && isValidRecording(request.resource.data) && areImmutableFieldsUnchanged(['roomId', 'roundId', 'userId', 'userName', 'audioData', 'duration', 'createdAt']) && (
+        // Allow users to update likes (only adding/removing their own uid)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) ||
+        // Allow host to update score
+        (isRoomHost(roomId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score'])) ||
+        // Allow host to update both score and likes
+        (isRoomHost(roomId))
+      );
+    }
+  }
+}
