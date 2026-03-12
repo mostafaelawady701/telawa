@@ -8,6 +8,7 @@ import { Mic, Square, Play, Download, Users, Settings, Loader2, Trophy, Clock, S
 import { motion, AnimatePresence } from 'motion/react';
 import Waveform from '../components/Waveform';
 import RatingModal from '../components/RatingModal';
+import RecordingsCarousel from '../components/RecordingsCarousel';
 import confetti from 'canvas-confetti';
 
 import { useLiveAudio } from '../hooks/useLiveAudio';
@@ -1114,71 +1115,8 @@ export default function RoomView({ user }: { user: FirebaseUser }) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto items-end px-4">
-                      {/* Second Place */}
-                      {roundResults[1] && (
-                        <motion.div
-                          initial={{ opacity: 0, x: -50 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.4 }}
-                          className="relative p-8 rounded-[3rem] glass-dark border border-white/5 flex flex-col items-center gap-4 h-[300px] justify-center order-2 md:order-1"
-                        >
-                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-400 text-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest">المركز الثاني</div>
-                          <img 
-                            src={participants.find(p => p.uid === roundResults[1].userId)?.photoURL} 
-                            className="w-24 h-24 rounded-3xl object-cover border-4 border-slate-400"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="text-center">
-                            <p className="font-black text-xl text-white">{roundResults[1].userName}</p>
-                            <p className="text-slate-400 font-black text-4xl mt-1">{roundResults[1].score}</p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* First Place */}
-                      {roundResults[0] && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 50 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2, type: 'spring' }}
-                          className="relative p-10 rounded-[3.5rem] glass-dark border-2 border-amber-500/30 flex flex-col items-center gap-6 h-[380px] justify-center z-10 shadow-2xl shadow-amber-500/10 order-1 md:order-2"
-                        >
-                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-900/40 rotate-12">
-                            <Trophy className="w-8 h-8 text-white -rotate-12" />
-                          </div>
-                          <img 
-                            src={participants.find(p => p.uid === roundResults[0].userId)?.photoURL} 
-                            className="w-32 h-32 rounded-[2.5rem] object-cover border-4 border-amber-500 shadow-2xl shadow-amber-500/20"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="text-center">
-                            <p className="font-black text-2xl text-white">{roundResults[0].userName}</p>
-                            <p className="text-amber-400 font-black text-6xl mt-2">{roundResults[0].score}</p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Third Place */}
-                      {roundResults[2] && (
-                        <motion.div
-                          initial={{ opacity: 0, x: 50 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.6 }}
-                          className="relative p-8 rounded-[3rem] glass-dark border border-white/5 flex flex-col items-center gap-4 h-[260px] justify-center order-3"
-                        >
-                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-amber-700 text-white rounded-full text-[10px] font-black uppercase tracking-widest">المركز الثالث</div>
-                          <img 
-                            src={participants.find(p => p.uid === roundResults[2].userId)?.photoURL} 
-                            className="w-20 h-20 rounded-3xl object-cover border-4 border-amber-700"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="text-center">
-                            <p className="font-black text-lg text-white">{roundResults[2].userName}</p>
-                            <p className="text-amber-700 font-black text-3xl mt-1">{roundResults[2].score}</p>
-                          </div>
-                        </motion.div>
-                      )}
+                    <div className="w-full max-w-5xl mx-auto px-4">
+                      <RecordingsCarousel recordings={recordings.filter(r => r.roundId === round.id)} participants={participants} />
                     </div>
 
                     <div className="flex flex-col items-center gap-8 pt-10">
